@@ -7,6 +7,7 @@ No install required.
 # from this folder
 python3 -m http.server 8080
 # then open http://localhost:8080/index.html
+or either search for npx serve 
 ```
 
 Or just double-click `index.html` — everything works from `file://` too, since there's no backend.
