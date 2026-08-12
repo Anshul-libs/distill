@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Distill — Frontend
 
 Find the AI tool that actually fits your task. Distill takes a plain-language query, scores it
@@ -135,3 +136,6 @@ utilities don't cover: focus rings, glass, motion, spinner, typing dots).
 - The results page randomly simulates an API timeout (~12% of searches) so the retry/error UI
   required by the spec is actually reachable in a demo — remove that in `js/results.js` once a
   real API is wired in.
+=======
+# distill
+>>>>>>> 5a6711084958e0c4374a11f290c91b09a2305541
