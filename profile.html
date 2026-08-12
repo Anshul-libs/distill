@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profile · Distill</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-cream text-ink antialiased">
+
+  <div class="flex min-h-screen">
+    <div id="sidebar-root"></div>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <header class="h-20 shrink-0 flex items-center px-6 lg:px-10 border-b border-line bg-cream/80 backdrop-blur sticky top-0 z-20">
+        <div id="topnav-root" class="w-full"></div>
+      </header>
+
+      <main class="flex-1 px-6 lg:px-10 py-10 page-enter">
+        <div class="max-w-lg mx-auto">
+          <h1 class="text-2xl font-bold mb-8">Profile</h1>
+
+          <div class="bg-white rounded-card border border-line p-8 text-center">
+            <div id="profileAvatar" class="w-20 h-20 rounded-full bg-green-light text-green-dark text-2xl font-bold flex items-center justify-center mx-auto"></div>
+            <h2 id="profileName" class="text-xl font-bold mt-4"></h2>
+            <p id="profileEmail" class="text-muted text-sm mt-1"></p>
+
+            <div class="mt-8 text-left flex flex-col gap-4">
+              <div class="flex items-center justify-between py-3 border-t border-line">
+                <span class="text-sm text-muted flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i>Name</span>
+                <span id="profileNameRow" class="text-sm font-medium"></span>
+              </div>
+              <div class="flex items-center justify-between py-3 border-t border-line">
+                <span class="text-sm text-muted flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4"></i>Email</span>
+                <span id="profileEmailRow" class="text-sm font-medium"></span>
+              </div>
+              <div class="flex items-center justify-between py-3 border-t border-line">
+                <span class="text-sm text-muted flex items-center gap-2"><i data-lucide="search" class="w-4 h-4"></i>Searches made</span>
+                <span id="profileSearches" class="text-sm font-medium"></span>
+              </div>
+            </div>
+
+            <button id="profileLogout" class="btn-scale mt-8 w-full py-3 rounded-btn border border-red-200 text-red-500 text-sm font-semibold hover:bg-red-50 flex items-center justify-center gap-2">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+              Log out
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <div id="footer-root"></div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/components.js"></script>
+  <script>
+    requireAuth();
+    renderShell("profile");
+
+    const user = currentUser();
+    if (user) {
+      document.getElementById("profileAvatar").textContent = user.name.trim()[0]?.toUpperCase() || "?";
+      document.getElementById("profileName").textContent = user.name;
+      document.getElementById("profileEmail").textContent = user.email;
+      document.getElementById("profileNameRow").textContent = user.name;
+      document.getElementById("profileEmailRow").textContent = user.email;
+      document.getElementById("profileSearches").textContent = getHistory().length;
+    }
+
+    document.getElementById("profileLogout").addEventListener("click", logoutUser);
+  </script>
+</body>
+</html>

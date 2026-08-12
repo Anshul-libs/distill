@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Offers · Distill</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-cream text-ink antialiased">
+
+  <div class="flex min-h-screen">
+    <div id="sidebar-root"></div>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <header class="h-20 shrink-0 flex items-center px-6 lg:px-10 border-b border-line bg-cream/80 backdrop-blur sticky top-0 z-20">
+        <div id="topnav-root" class="w-full"></div>
+      </header>
+
+      <main class="flex-1 px-6 lg:px-10 py-10 page-enter">
+        <div class="max-w-5xl mx-auto">
+          <div class="flex items-center gap-3 mb-1">
+            <span class="w-9 h-9 rounded-xl bg-green-light flex items-center justify-center">
+              <i data-lucide="tag" class="w-5 h-5 text-green-dark"></i>
+            </span>
+            <h1 class="text-2xl font-bold">Offers</h1>
+          </div>
+          <p class="text-muted mb-8">Free and low-cost tiers worth trying before you pay for anything.</p>
+
+          <div id="offersGrid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 stagger"></div>
+        </div>
+      </main>
+
+      <div id="footer-root"></div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/components.js"></script>
+  <script src="js/tools-grid.js"></script>
+  <script>
+    requireAuth();
+    renderShell("offers");
+    const deals = AI_TOOLS
+      .filter((t) => t.pricing === "free" || t.pricing === "hybrid")
+      .sort((a, b) => trendingScore(b) - trendingScore(a));
+    renderToolGrid("offersGrid", deals, "Offer");
+  </script>
+</body>
+</html>

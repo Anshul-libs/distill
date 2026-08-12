@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in · Distill</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-cream text-ink antialiased min-h-screen flex flex-col">
+
+  <header class="px-6 h-20 flex items-center">
+    <a href="index.html" class="flex items-center gap-2.5" aria-label="Distill home">
+      <span class="w-9 h-9 rounded-xl bg-green flex items-center justify-center">
+        <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+      </span>
+      <span class="text-lg font-bold tracking-tight">Distill</span>
+    </a>
+  </header>
+
+  <main class="flex-1 flex items-center justify-center px-6 pb-16">
+    <div class="page-enter w-full max-w-sm">
+      <div class="bg-white rounded-card shadow-card border border-line p-8">
+        <h1 class="text-2xl font-bold text-center">Welcome back</h1>
+        <p class="text-sm text-muted text-center mt-2">Log in to get your tailored AI recommendations.</p>
+
+        <form id="loginForm" class="mt-7 flex flex-col gap-4" novalidate>
+          <div>
+            <label for="email" class="text-sm font-medium text-ink">Email</label>
+            <input id="email" type="email" autocomplete="email" required placeholder="you@gmail.com"
+              class="search-shell mt-1.5 w-full px-4 py-3 rounded-btn border border-line bg-cream text-sm outline-none" />
+          </div>
+          <div>
+            <label for="password" class="text-sm font-medium text-ink">Password</label>
+            <input id="password" type="password" autocomplete="current-password" required placeholder="••••••••"
+              class="search-shell mt-1.5 w-full px-4 py-3 rounded-btn border border-line bg-cream text-sm outline-none" />
+          </div>
+
+          <p id="formError" class="hidden text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2" role="alert"></p>
+
+          <button type="submit" class="btn-scale mt-1 w-full py-3 rounded-btn bg-green text-white font-semibold hover:bg-green-dark">
+            Log in
+          </button>
+        </form>
+
+        <p class="text-sm text-muted text-center mt-6">
+          Don't have an account?
+          <a href="signup.html" class="text-green-dark font-semibold hover:underline">Sign up</a>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <div id="footer-root"></div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/components.js"></script>
+  <script>
+    if (window.lucide) lucide.createIcons();
+    renderFooter();
+
+    // If already logged in, skip straight to home.
+    if (currentUser()) window.location.href = "home.html";
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("email")) document.getElementById("email").value = params.get("email");
+
+    const form = document.getElementById("loginForm");
+    const errorBox = document.getElementById("formError");
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const result = loginUser(email, password);
+      if (!result.ok) {
+        errorBox.textContent = result.error;
+        errorBox.classList.remove("hidden");
+        return;
+      }
+      errorBox.classList.add("hidden");
+      window.location.href = "home.html";
+    });
+  </script>
+</body>
+</html>

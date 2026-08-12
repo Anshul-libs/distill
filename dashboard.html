@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard · Distill</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="js/tailwind-config.js"></script>
+<link rel="stylesheet" href="css/styles.css" />
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-cream text-ink antialiased">
+
+  <div class="flex min-h-screen">
+    <div id="sidebar-root"></div>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <header class="h-20 shrink-0 flex items-center px-6 lg:px-10 border-b border-line bg-cream/80 backdrop-blur sticky top-0 z-20">
+        <div id="topnav-root" class="w-full"></div>
+      </header>
+
+      <main class="flex-1 px-6 lg:px-10 py-10 page-enter">
+        <div class="max-w-5xl mx-auto">
+          <h1 class="text-2xl font-bold mb-1">Dashboard</h1>
+          <p id="dashGreeting" class="text-muted mb-8"></p>
+
+          <!-- Statistics -->
+          <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
+            <div class="bg-white rounded-card border border-line p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-muted">Total searches</span>
+                <i data-lucide="search" class="w-4 h-4 text-green"></i>
+              </div>
+              <p id="statSearches" class="text-3xl font-bold mt-3">0</p>
+            </div>
+            <div class="bg-white rounded-card border border-line p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-muted">Tools reviewed</span>
+                <i data-lucide="layers" class="w-4 h-4 text-green"></i>
+              </div>
+              <p class="text-3xl font-bold mt-3"><span id="statTools">0</span>+</p>
+            </div>
+            <div class="bg-white rounded-card border border-line p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-muted">Free tools available</span>
+                <i data-lucide="gift" class="w-4 h-4 text-green"></i>
+              </div>
+              <p id="statFree" class="text-3xl font-bold mt-3">0</p>
+            </div>
+            <div class="bg-white rounded-card border border-line p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-muted">This week's searches</span>
+                <i data-lucide="calendar" class="w-4 h-4 text-green"></i>
+              </div>
+              <p id="statWeek" class="text-3xl font-bold mt-3">0</p>
+            </div>
+          </div>
+
+          <div class="grid lg:grid-cols-3 gap-6 mt-8">
+            <!-- Quick actions -->
+            <div class="bg-white rounded-card border border-line p-6">
+              <h2 class="font-semibold mb-4">Quick actions</h2>
+              <div class="flex flex-col gap-2">
+                <a href="home.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-btn hover:bg-green-light text-sm font-medium">
+                  <i data-lucide="search" class="w-4 h-4 text-green"></i> New search
+                </a>
+                <a href="new-chat.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-btn hover:bg-green-light text-sm font-medium">
+                  <i data-lucide="message-square-plus" class="w-4 h-4 text-green"></i> New chat
+                </a>
+                <a href="trendy.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-btn hover:bg-green-light text-sm font-medium">
+                  <i data-lucide="flame" class="w-4 h-4 text-green"></i> See trending tools
+                </a>
+                <a href="offers.html" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-btn hover:bg-green-light text-sm font-medium">
+                  <i data-lucide="tag" class="w-4 h-4 text-green"></i> Browse offers
+                </a>
+                <button id="dashClearHistory" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-btn hover:bg-red-50 text-sm font-medium text-left">
+                  <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Clear history
+                </button>
+              </div>
+            </div>
+
+            <!-- Recent activity -->
+            <div class="lg:col-span-2 bg-white rounded-card border border-line p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold">Recent activity</h2>
+                <a href="history.html" class="text-xs font-semibold text-green-dark hover:underline">View all</a>
+              </div>
+              <div id="dashActivity" class="flex flex-col divide-y divide-line"></div>
+              <div id="dashActivityEmpty" class="hidden text-center py-10 text-muted text-sm">
+                No activity yet. Run your first search from Home.
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <div id="footer-root"></div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/components.js"></script>
+  <script>
+    requireAuth();
+    renderShell("dashboard");
+
+    const user = currentUser();
+    document.getElementById("dashGreeting").textContent = user
+      ? `Welcome back, ${user.name.split(" ")[0]}.`
+      : "";
+
+    const items = getHistory();
+    document.getElementById("statSearches").textContent = items.length;
+    document.getElementById("statTools").textContent = AI_TOOLS.length;
+    document.getElementById("statFree").textContent = AI_TOOLS.filter((t) => t.pricing === "free").length;
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    document.getElementById("statWeek").textContent = items.filter((h) => h.time >= weekAgo).length;
+
+    const activityRoot = document.getElementById("dashActivity");
+    const activityEmpty = document.getElementById("dashActivityEmpty");
+    if (!items.length) {
+      activityEmpty.classList.remove("hidden");
+    } else {
+      activityRoot.innerHTML = items
+        .slice(0, 6)
+        .map(
+          (h) => `
+          <a href="home.html?q=${encodeURIComponent(h.query)}" class="nav-link flex items-center gap-3 py-3 hover:bg-green-light/40 -mx-2 px-2 rounded-lg">
+            <span class="w-8 h-8 rounded-lg bg-cream flex items-center justify-center shrink-0">
+              <i data-lucide="search" class="w-4 h-4 text-green"></i>
+            </span>
+            <span class="flex-1 text-sm">${h.query}</span>
+            <span class="text-xs text-muted">${relativeTime(h.time)}</span>
+          </a>`
+        )
+        .join("");
+      if (window.lucide) lucide.createIcons();
+    }
+
+    document.getElementById("dashClearHistory").addEventListener("click", () => {
+      clearHistory();
+      location.reload();
+    });
+  </script>
+</body>
+</html>
