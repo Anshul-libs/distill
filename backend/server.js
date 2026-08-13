@@ -6,8 +6,10 @@ const app = express();
 
 const toolRoutes = require("./routes/toolroutes");
 
-app.use("/api/tools", toolRoutes);
+const searchRoutes = require("./routes/searchroutes");
 
+app.use("/api/tools", toolRoutes);
+app.use("/api/search", searchRoutes);
 app.use(cors());
 app.use(express.json());
 
