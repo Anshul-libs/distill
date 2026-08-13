@@ -7,11 +7,14 @@ const app = express();
 const toolRoutes = require("./routes/toolroutes");
 
 const searchRoutes = require("./routes/searchroutes");
+const recommendationRoutes = require("./routes/recommendation");
+
+app.use(cors());
+app.use(express.json());
 
 app.use("/api/tools", toolRoutes);
 app.use("/api/search", searchRoutes);
-app.use(cors());
-app.use(express.json());
+app.use("/api/recommendations", recommendationRoutes);
 
 // Connect to Neon PostgreSQL
 require("./config/db");
