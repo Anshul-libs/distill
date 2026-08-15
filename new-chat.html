@@ -241,7 +241,93 @@
         updateCardRatings(card, card.dataset.toolId);
       });
     }
+    // Phase 9 — Connect New Chat to backend
+async function createNewChat(query) {
+  try {
+    const token = localStorage.getItem("token");
 
+    const response = await fetch("http://localhost:5000/api/chats", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        profession: "Student",
+        task: query
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to create chat");
+    }
+
+    console.log("New Chat Response:", data);
+
+    // Save chat ID for this conversation
+    if (data.chat_id) {
+      localStorage.setItem("currentChatId", data.chat_id);
+    }
+
+    // Display Gemini recommendation
+    if (data.recommendation) {
+      displayGeminiRecommendation(data.recommendation);
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error("New Chat Error:", error);
+
+    const errorBox = document.createElement("div");
+    errorBox.className =
+      "mt-6 p-4 rounded-card bg-red-50 border border-red-200 text-red-600 text-sm";
+
+    errorBox.textContent =
+      "Unable to get AI recommendation. Please try again.";
+
+    resultsBlocks.prepend(errorBox);
+
+    return null;
+  }
+}   // Display Gemini recommendation
+function displayGeminiRecommendation(recommendation) {
+  const recommendationBox = document.createElement("div");
+
+  recommendationBox.className =
+    "mb-6 p-6 bg-white rounded-card border border-line shadow-card";
+
+  let recommendationText = "";
+
+  if (typeof recommendation === "string") {
+    recommendationText = recommendation;
+  } else {
+    recommendationText = JSON.stringify(
+      recommendation,
+      null,
+      2
+    );
+  }
+
+  recommendationBox.innerHTML = `
+    <div class="flex items-center gap-2 mb-3">
+      <i data-lucide="sparkles" class="w-5 h-5 text-green"></i>
+      <h2 class="font-bold text-lg">AI Recommendation</h2>
+    </div>
+
+    <div class="text-sm text-ink/80 leading-relaxed whitespace-pre-wrap">
+      ${recommendationText}
+    </div>
+  `;
+
+  resultsBlocks.prepend(recommendationBox);
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+}
     // Main Search Function
     function performSearch(append = false) {
       if (activeQueries.length === 0) {
@@ -251,8 +337,13 @@
       }
 
       emptyState.classList.add('hidden');
-      const fullQuery = activeQueries.join(" ");
-      const tools = searchTools(fullQuery, 7);
+
+const fullQuery = activeQueries.join(" ");
+
+// Phase 9 — Send query to backend
+createNewChat(fullQuery);
+
+const tools = searchTools(fullQuery, 7);
 
       if (!tools.length) {
         if (!append) resultsBlocks.innerHTML = '';
