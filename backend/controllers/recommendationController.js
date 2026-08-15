@@ -1,11 +1,14 @@
 const pool = require("../config/db");
 const ai = require("../config/gemini");
 
-const getRecommendations = async (req, res) => {
+const { profession, task, message } = req.body;{
     try {
-        const { profession, task } = req.body;
+        const { profession, task, message } = req.body;
 
-        if (!profession || !task) {
+        // New Chat can send "message"; old API can still send "task"
+        const userTask = message || task;
+
+        if (!profession || !userTask) {
             return res.status(400).json({
                 message: "Profession and task are required"
             });
@@ -33,7 +36,7 @@ User profession:
 ${profession}
 
 User task:
-${task}
+${userTask}
 
 Available AI tools from the Distill database:
 ${JSON.stringify(toolData, null, 2)}
@@ -53,10 +56,12 @@ Keep the recommendation clear and useful.
             model: "gemini-3.5-flash",
             input: prompt
         });
-console.log("NEW RECOMMENDATION CONTROLLER RUNNING");
+
+        console.log("NEW RECOMMENDATION CONTROLLER RUNNING");
+
         res.status(200).json({
             profession,
-            task,
+            task: userTask,
             recommendation: interaction.output_text
         });
 
