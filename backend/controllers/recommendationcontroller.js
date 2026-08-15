@@ -1,7 +1,7 @@
 const pool = require("../config/db");
 const ai = require("../config/gemini");
 
-const getRecommendations = async (req, res) => {
+const { profession, task, message } = req.body;{
     try {
         const { profession, task, message } = req.body;
 
