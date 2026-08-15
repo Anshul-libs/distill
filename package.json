@@ -1,0 +1,30 @@
+{
+  "name": "distill",
+  "version": "1.0.0",
+  "description": "<<<<<<< HEAD\r # Distill — Frontend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "Vite"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anshul-libs/distill.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Anshul-libs/distill/issues"
+  },
+  "homepage": "https://github.com/Anshul-libs/distill#readme",
+  "devDependencies": {
+    "vite": "^8.2.1"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  }
+}

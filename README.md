@@ -1,25 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Distill — Frontend
+=======
+>>>>>>> 0704e2de53ee4c944c77a946c74034fb0bf3ea4f
 
-Find the AI tool that actually fits your task. Distill takes a plain-language query, scores it
-against a catalog of AI tools, and returns one best match plus two alternatives — instead of
-another directory to scroll through.
-
-This is the **frontend only**: static HTML/CSS/JS, no backend, no build step. Every "API call"
-(recommendations, auth, history) is mocked on-device so the whole flow is clickable end to end.
-
-## Why plain HTML/CSS/JS instead of React + Vite
-
-The build environment this was created in has no network access, so `npm`/`pnpm` couldn't install
-anything. Rather than hand over a project that can't be installed, it's built with the tech stack
-the original brief also specified as acceptable — HTML, CSS, JS, Tailwind, Bootstrap-style icons,
-Inter — loaded via CDN with **zero build step**. Open `index.html` and it runs.
-
-If you do want this ported to React + Vite + shadcn/ui later, the component boundaries below
-(sidebar, top nav, search bar, recommendation card, tool grid card) map cleanly onto React
-components — each is already an isolated render function in `js/`, not tangled into page markup.
-
-## Quick start
 
 No install required.
 
@@ -27,6 +11,7 @@ No install required.
 # from this folder
 python3 -m http.server 8080
 # then open http://localhost:8080/index.html
+or either search for npx serve 
 ```
 
 Or just double-click `index.html` — everything works from `file://` too, since there's no backend.
@@ -63,6 +48,7 @@ distill-frontend/
     └── favicon.svg
 ```
 
+<<<<<<< HEAD
 ## Component hierarchy
 
 Nothing here uses a framework, so "components" are small render functions in `js/` that each own
@@ -139,3 +125,5 @@ utilities don't cover: focus rings, glass, motion, spinner, typing dots).
 =======
 # distill
 >>>>>>> 5a6711084958e0c4374a11f290c91b09a2305541
+=======
+>>>>>>> 0704e2de53ee4c944c77a946c74034fb0bf3ea4f
