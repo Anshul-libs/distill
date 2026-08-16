@@ -21,7 +21,7 @@ function toolGridCard(tool, badgeText) {
   const ratingDisplay = avg ? `${avg.toFixed(1)} Distill Rating (${count})` : "No ratings yet";
 
   return `
-    <a href="home.html?q=${encodeURIComponent(tool.name)}" class="rec-card block bg-white rounded-card border border-line p-6 relative">
+    <a href="${tool.official_website || tool.website || '#'}" target="_blank" rel="noopener noreferrer" class="rec-card block bg-white rounded-card border border-line p-6 relative">
       ${badgeText ? `<span class="absolute -top-2.5 left-5 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green text-white shadow-card">${badgeText}</span>` : ""}
       <div class="flex items-start justify-between gap-3">
         <div>
@@ -43,14 +43,67 @@ function toolGridCard(tool, badgeText) {
       </div>
     </a>`;
 }
-
-function renderToolGrid(containerId, tools, badgeText) {
+function renderTrendingGrid(containerId, tools) {
   const root = document.getElementById(containerId);
+
   if (!root) return;
-  if (!tools.length) {
-    root.innerHTML = `<p class="col-span-full text-center text-muted py-16">Nothing to show here yet.</p>`;
+
+  if (!tools || !tools.length) {
+    root.innerHTML = `
+      <p class="col-span-full text-center text-muted py-16">
+        No trending AI tools available right now.
+      </p>
+    `;
     return;
   }
-  root.innerHTML = tools.map((t) => toolGridCard(t, badgeText)).join("");
-  if (window.lucide) lucide.createIcons();
+
+  root.innerHTML = tools.map((tool, index) => `
+    <div class="bg-white rounded-card border border-line p-6 relative rec-card">
+
+      <div class="flex items-start gap-4">
+
+        <div class="shrink-0 w-9 h-9 rounded-xl bg-green-light
+                    flex items-center justify-center">
+          <span class="font-bold text-green-dark">
+            #${index + 1}
+          </span>
+        </div>
+
+        <div class="min-w-0 flex-1">
+
+          <h3 class="font-bold text-lg leading-tight">
+            ${tool.tool_name || "Unnamed AI Tool"}
+          </h3>
+
+          <p class="text-sm text-ink/80 mt-2 leading-relaxed">
+            ${tool.description || "No description available."}
+          </p>
+
+          <div class="mt-4 flex items-center justify-between gap-3">
+
+            <span class="text-xs font-semibold text-muted">
+              ${tool.source || "Product Hunt"}
+            </span>
+
+            ${
+              tool.official_website
+                ? `
+                  <a
+                    href="${tool.official_website}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-xs font-semibold text-green-dark hover:underline"
+                  >
+                    Visit Website →
+                  </a>
+                `
+                : ""
+            }
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `).join("");
 }

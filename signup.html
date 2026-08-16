@@ -73,19 +73,25 @@
     const form = document.getElementById("signupForm");
     const errorBox = document.getElementById("formError");
 
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
-      const result = signupUser(name, email, password);
-      if (!result.ok) {
-        errorBox.textContent = result.error;
-        errorBox.classList.remove("hidden");
-        return;
-      }
-      window.location.href = `login.html?email=${encodeURIComponent(email)}`;
-    });
+      form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  errorBox.classList.add("hidden");
+
+  const result = await signupUser(name, email, password);
+
+  if (!result.ok) {
+    errorBox.textContent = result.error;
+    errorBox.classList.remove("hidden");
+    return;
+  }
+
+  window.location.href = `login.html?email=${encodeURIComponent(email)}`;
+});
   </script>
 </body>
 </html>

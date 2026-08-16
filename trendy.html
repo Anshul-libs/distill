@@ -44,10 +44,30 @@
   <script src="js/components.js"></script>
   <script src="js/tools-grid.js"></script>
   <script>
-    requireAuth();
-    renderShell("trendy");
-    const trending = [...AI_TOOLS].sort((a, b) => trendingScore(b) - trendingScore(a)).slice(0, 9);
-    renderToolGrid("trendyGrid", trending, "Trending");
+  requireAuth();
+  renderShell("trendy");
+
+  async function loadTrending() {
+    try {
+      const response = await fetch("http://localhost:5000/api/trending");
+
+      const data = await response.json();
+
+      if (!data.success) {
+        console.error("Failed to load trending tools");
+        return;
+      }
+
+      console.log("🔥 Real Product Hunt trending data:", data.tools);
+
+      renderTrendingGrid("trendyGrid", data.tools);
+
+    } catch (error) {
+      console.error("❌ Trending API error:", error);
+    }
+  }
+
+  loadTrending();
   </script>
 </body>
 </html>
