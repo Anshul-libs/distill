@@ -11,11 +11,11 @@ const chatRoutes = require("./routes/chatRoutes");
 const authRoutes = require("./routes/authroutes");
 const historyRoutes = require("./routes/historyRoutes");
 const trendingRoutes = require("./routes/trendingRoutes");
+const ratingRoutes = require("./routes/ratingroutes");
 
 
 app.use(cors());
 app.use(express.json());
-
 app.use("/api/tools", toolRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/recommendations", recommendationRoutes);
@@ -24,6 +24,7 @@ console.log("authRoutes type:", typeof authRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/trending", trendingRoutes);
+app.use("/api/ratings", ratingRoutes);
 
 // Connect to Neon PostgreSQL
 require("./config/db");

@@ -1,31 +1,129 @@
 // js/rating.js
-const RATINGS_KEY = "distill_ratings";
 
-function getRatings() {
-  try {
-    return JSON.parse(localStorage.getItem(RATINGS_KEY)) || {};
-  } catch {
-    return {};
-  }
+const RATINGS_API = "http://localhost:5000/api/ratings";
+
+// Get JWT token
+function getAuthToken() {
+    return localStorage.getItem("distill_token");
 }
 
-function setRating(toolId, userEmail, stars) {
-  const ratings = getRatings();
-  if (!ratings[toolId]) ratings[toolId] = [];
-  const existing = ratings[toolId].find(r => r.user === userEmail);
-  if (existing) existing.rating = stars;
-  else ratings[toolId].push({ user: userEmail, rating: stars });
-  localStorage.setItem(RATINGS_KEY, JSON.stringify(ratings));
+
+// Submit a rating
+async function setRating(toolId, stars) {
+    try {
+        const token = getAuthToken();
+
+        if (!token) {
+            throw new Error("Please login first");
+        }
+
+        const response = await fetch(RATINGS_API, {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+
+            body: JSON.stringify({
+                toolId: Number(toolId),
+                rating: Number(stars)
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to submit rating");
+        }
+
+        return data;
+
+    } catch (error) {
+        console.error("Rating Error:", error);
+        throw error;
+    }
 }
 
-function getAvgRating(toolId) {
-  const ratings = getRatings();
-  if (!ratings[toolId] || ratings[toolId].length === 0) return null;
-  const sum = ratings[toolId].reduce((a, b) => a + b.rating, 0);
-  return sum / ratings[toolId].length;
+
+// Get ratings for a tool
+async function getToolRating(toolId) {
+    try {
+        const response = await fetch(
+            `${RATINGS_API}/${Number(toolId)}`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to get ratings");
+        }
+
+        return data;
+
+    } catch (error) {
+        console.error("Get Rating Error:", error);
+        throw error;
+    }
 }
 
-function getRatingCount(toolId) {
-  const ratings = getRatings();
-  return ratings[toolId] ? ratings[toolId].length : 0;
+
+// Get logged-in user's rating
+async function getMyRating(toolId) {
+    try {
+        const token = getAuthToken();
+
+        if (!token) {
+            return null;
+        }
+
+        const response = await fetch(
+            `${RATINGS_API}/${Number(toolId)}/my-rating`,
+            {
+                method: "GET",
+
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Failed to get your rating");
+        }
+
+        return data.rating;
+
+    } catch (error) {
+        console.error("Get My Rating Error:", error);
+        return null;
+    }
+}
+
+
+// Get average rating only
+async function getAvgRating(toolId) {
+    try {
+        const data = await getToolRating(toolId);
+
+        return data.averageRating;
+
+    } catch (error) {
+        return 0;
+    }
+}
+
+
+// Get total rating count
+async function getRatingCount(toolId) {
+    try {
+        const data = await getToolRating(toolId);
+
+        return data.totalRatings;
+
+    } catch (error) {
+        return 0;
+    }
 }

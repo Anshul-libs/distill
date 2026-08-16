@@ -122,6 +122,7 @@
   <script src="js/components.js"></script>
   <script src="js/search.js"></script>
   <script src="js/rating.js"></script>
+  <script src="../js/rating.js"></script>
   <script>
     requireAuth();
     renderShell("home");
@@ -179,7 +180,7 @@
     }
 
     // Fill card function
-    function fillCard(node, tool, query, isBest) {
+    async function fillCard(node, tool, query, isBest) {
       node.dataset.toolId = tool.id;
       node.querySelector('.tool-name').textContent = tool.name;
       node.querySelector('.tool-category').textContent = tool.category;
@@ -200,18 +201,31 @@
       consList.innerHTML = tool.cons.slice(0, isBest ? 3 : 2).map(c => `<li class="flex gap-1"><span>·</span><span>${c}</span></li>`).join('');
 
       // Update Ratings
-      updateCardRatings(node, tool.id);
+      await updateCardRatings(node, tool.id);
       
       // Attach flip listener
       attachFlipListener(node);
     }
 
-    function updateCardRatings(card, toolId) {
-      const avg = getAvgRating(toolId);
-      const count = getRatingCount(toolId);
-      card.querySelector('.tool-avg-rating').textContent = avg ? avg.toFixed(1) : "N/A";
-      card.querySelector('.tool-rating-count').textContent = count;
-    }
+       async function updateCardRatings(card, toolId) {
+  try {
+    const data = await getToolRating(toolId);
+
+    const avg = Number(data.averageRating) || 0;
+    const count = Number(data.totalRatings) || 0;
+
+    card.querySelector('.tool-avg-rating').textContent =
+      avg > 0 ? avg.toFixed(1) : "N/A";
+
+    card.querySelector('.tool-rating-count').textContent = count;
+
+  } catch (error) {
+    console.error("Failed to load rating:", error);
+
+    card.querySelector('.tool-avg-rating').textContent = "N/A";
+    card.querySelector('.tool-rating-count').textContent = "0";
+  }
+}
 
     function attachFlipListener(card) {
       let timer = null;
@@ -230,27 +244,45 @@
       card.addEventListener('touchend', endFlip);
 
       // Submit rating logic
-      const submitBtn = card.querySelector('.submit-rating');
-      submitBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        const selected = card.querySelector('input[name="rating"]:checked');
-        if (!selected) {
-          alert("Please select a star rating.");
-          return;
-        }
-        const user = currentUser();
-        if (!user) {
-          alert("You must be logged in to rate.");
-          return;
-        }
-        setRating(card.dataset.toolId, user.email, parseInt(selected.value));
-        card.classList.remove('flipped');
-        updateCardRatings(card, card.dataset.toolId);
-      });
+                  const submitBtn = card.querySelector('.submit-rating');
+
+submitBtn.addEventListener('click', async function(e) {
+  e.stopPropagation();
+
+  const selected = card.querySelector('input[name="rating"]:checked');
+
+  if (!selected) {
+    alert("Please select a star rating.");
+    return;
+  }
+
+  try {
+    const toolId = Number(card.dataset.toolId);
+    const stars = Number(selected.value);
+
+    await setRating(toolId, stars);
+
+    alert("Rating submitted successfully!");
+
+    card.classList.remove('flipped');
+
+    await updateCardRatings(card, toolId);
+
+  } catch (error) {
+    console.error("Rating submission failed:", error);
+
+    if (error.message === "Please login first") {
+      alert("You must be logged in to rate.");
+    } else if (error.message === "You have already rated this tool") {
+      alert("You have already rated this tool.");
+    } else {
+      alert(error.message || "Failed to submit rating.");
     }
+  }
+});
 
     // Main Search Function
-    function performSearch(append = false) {
+    async function performSearch(append = false) {
       if (activeQueries.length === 0) {
         resultsBlocks.innerHTML = '';
         emptyState.classList.remove('hidden');
@@ -286,7 +318,7 @@
       badge.className = 'absolute -top-3 left-6 z-10 inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-full bg-amber-400 text-amber-950 shadow-card';
       badge.innerHTML = '<i data-lucide="crown" class="w-3 h-3"></i> Most Recommended';
       bestSlot.appendChild(badge);
-      fillCard(bestNode, best, fullQuery, true);
+      await fillCard(bestNode, best, fullQuery, true);
       bestSlot.appendChild(bestNode);
       block.appendChild(bestSlot);
 
@@ -296,7 +328,7 @@
       alts.forEach(tool => {
         const node = document.getElementById('recCardTemplate').content.cloneNode(true);
         node.querySelector('.rec-card').classList.add('rec-alt');
-        fillCard(node, tool, fullQuery, false);
+        await fillCard(node, tool, fullQuery, false);
         altSlot.appendChild(node);
       });
       block.appendChild(altSlot);
@@ -358,6 +390,7 @@
       activeQueries = [];
       renderTags();
     }
+  }
   </script>
 </body>
-</html>
+</html> 

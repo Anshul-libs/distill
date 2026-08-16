@@ -1,5 +1,5 @@
 const { Pool } = require("pg");
-require("dotenv").config({ path: "backend/.env" });
+require("dotenv").config({ path: ".env" });
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -18,7 +18,7 @@ pool.connect()
         client.release();
     })
     .catch((err) => {
-        console.error("Database connection failed:", err.message);
-    });
-
+    console.error("Database connection failed:");
+    console.error(err);
+});
 module.exports = pool;
