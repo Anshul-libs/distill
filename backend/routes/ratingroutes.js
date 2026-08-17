@@ -8,7 +8,7 @@ const {
     getMyRating
 } = require("../controllers/ratingcontroller");
 
-const authMiddleware = require("../middleware/authMiddleware");
+const authMiddleware = require("../middleware/authmiddleware");
 
 // Submit a rating
 router.post("/", authMiddleware, addRating);
