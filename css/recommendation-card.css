@@ -35,37 +35,50 @@
   box-sizing: border-box;
 }
 
-/* 8pt-grid spacing throughout: 8 / 16 / 24 / 32 / 40px */
-.rcard-main-row {
-  max-width: 640px;
-  margin: 0 auto 32px;
-}
-
-.rcard-alt-row {
+/* 8pt-grid spacing throughout: 8 / 16 / 24 / 32 / 40px
+ *
+ * All cards — the highlighted "main" pick and every alternative — now
+ * live in ONE responsive grid so they share identical width and height.
+ * `auto-fit` + `minmax()` reflows the column count on its own as the
+ * viewport shrinks, so this works for any container/screen size without
+ * hand-maintained breakpoints. `grid-auto-rows: 1fr` keeps every card in
+ * a row the same height even if the browser wraps unevenly.
+ */
+.rcard-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
+  align-items: stretch;
+  grid-auto-rows: 1fr;
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
-@media (max-width: 900px) {
-  .rcard-alt-row { grid-template-columns: repeat(2, 1fr); }
+/* Below ~560px a single column reads better than a cramped 260px one. */
+@media (max-width: 560px) {
+  .rcard-row { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 600px) {
-  .rcard-alt-row { grid-template-columns: 1fr; }
-  .rcard-main-row { max-width: 100%; }
-}
+/* Deprecated aliases kept so any old markup still using the previous
+   `.rcard-main-row` / `.rcard-alt-row` wrapper classes doesn't break. */
+.rcard-main-row,
+.rcard-alt-row { display: contents; }
 
 /* ── Card shell ─────────────────────────────────────────────────────── */
+/* Fixed height is what actually makes every card equal — a shared height
+   plus internal clamping (below) instead of letting content push each
+   card to whatever length its own text happens to need. */
 .rcard {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  height: var(--rcard-height, 440px);
   background: #FFFFFF;
   border: 1px solid var(--rcard-border);
   border-radius: var(--rcard-radius);
   box-shadow: var(--rcard-shadow);
   transition: transform 260ms var(--rcard-ease), box-shadow 260ms var(--rcard-ease);
   perspective: 1400px;
-  min-height: 300px;
 }
 
 .rcard:hover {
@@ -73,15 +86,15 @@
   box-shadow: var(--rcard-shadow-hover);
 }
 
-/* Main / highlighted card: ~1.25x visual weight */
+@media (max-width: 560px) {
+  .rcard { height: var(--rcard-height-mobile, 420px); }
+}
+
+/* Main / highlighted card: same footprint as every other card, just a
+   distinct border + badge so it doesn't unbalance the grid. */
 .rcard--main {
   border: 1.5px solid var(--rcard-gold);
   box-shadow: 0 20px 48px rgba(212, 175, 55, 0.18), 0 8px 24px rgba(0, 0, 0, 0.05);
-  min-height: 340px;
-}
-
-.rcard--main .rcard-front {
-  padding: 32px;
 }
 
 .rcard-badge-main {
@@ -107,10 +120,11 @@
   position: relative;
   width: 100%;
   height: 100%;
-  min-height: inherit;
+  flex: 1;
   transition: transform 550ms var(--rcard-ease);
   transform-style: preserve-3d;
   will-change: transform;
+  cursor: pointer;
 }
 
 .rcard.is-flipped .rcard-inner {
@@ -126,25 +140,35 @@
   display: flex;
   flex-direction: column;
   padding: 24px;
+  overflow: hidden;
 }
 
 .rcard-front { position: relative; }
 .rcard-back { transform: rotateY(180deg); align-items: center; justify-content: center; text-align: center; }
 
 /* ── Typography ─────────────────────────────────────────────────────── */
+/* Same font sizes on every card — including the "main" pick — so no
+   single card's text runs longer than the others just because it's
+   rendered bigger. */
 .rcard-name {
   font-weight: 700;
   font-size: 18px;
   line-height: 1.3;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.rcard--main .rcard-name { font-size: 22px; }
 
 .rcard-category {
   font-weight: 400;
   font-size: 12px;
   color: var(--rcard-muted);
   margin: 4px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rcard-description {
@@ -153,6 +177,12 @@
   line-height: 1.6;
   color: rgba(17, 24, 39, 0.82);
   margin: 16px 0 0;
+  /* Clamp to 3 lines so a long blurb can never stretch one card taller
+     than the rest of the row. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ── Header row (logo + name + pricing badge) ──────────────────────── */
@@ -183,7 +213,6 @@
   align-items: center;
   justify-content: center;
 }
-.rcard--main .rcard-logo { width: 48px; height: 48px; font-size: 18px; }
 
 .rcard-pricing {
   flex-shrink: 0;
@@ -220,7 +249,16 @@
   flex-direction: column;
   gap: 4px;
 }
-.rcard-proscons li { display: flex; gap: 6px; }
+/* Every card shows the same number of pros/cons lines (2, set in JS) and
+   each line clamps to one row instead of wrapping — keeps this block the
+   same height no matter how long an individual point's wording is. */
+.rcard-proscons li {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  gap: 6px;
+}
 
 /* ── Footer: credits, Distill Rating, visit/save ───────────────────── */
 .rcard-footer {

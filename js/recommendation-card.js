@@ -105,11 +105,24 @@
   }
 
   // ── Card markup ──────────────────────────────────────────────────────
+  // Every card shows the SAME number of pros/cons and the same amount of
+  // description text — "main" included — so cards stay equal in size no
+  // matter how much copy a given tool has. CSS line-clamp is a second
+  // safety net on top of this.
+  const PROS_CONS_COUNT = 2;
+  const DESCRIPTION_MAX_CHARS = 120;
+
+  function truncate(str, max) {
+    const s = str == null ? "" : String(str);
+    if (s.length <= max) return s;
+    return `${s.slice(0, max - 1).trimEnd()}…`;
+  }
+
   function cardMarkup(tool, isMain) {
     const cardId = uid("rcard");
     const groupName = `${cardId}-stars`;
     const pricing = tool.pricing || "hybrid";
-    const proCount = isMain ? 3 : 2;
+    const proCount = PROS_CONS_COUNT;
 
     // Radio inputs are placed BEFORE their label (reverse row via CSS is
     // avoided for simplicity — see the ~ sibling hover rule in the CSS)
@@ -147,7 +160,7 @@
               <span class="rcard-pricing ${PRICING_CLASS[pricing] || PRICING_CLASS.hybrid}">${PRICING_LABEL[pricing] || "Hybrid"}</span>
             </div>
 
-            <p class="rcard-description">${escapeHtml(tool.description || "")}</p>
+            <p class="rcard-description">${escapeHtml(truncate(tool.description || "", DESCRIPTION_MAX_CHARS))}</p>
 
             <div class="rcard-proscons">
               <div>
@@ -282,6 +295,17 @@
       });
     });
 
+    // Click anywhere on the card that ISN'T an interactive control (a
+    // link, button, or the star-rating inputs/labels) toggles the flip.
+    // This is what makes a *second* click — on the back face, not just
+    // the explicit ✕ close button — turn the card back to the front.
+    // The dedicated flip/flip-back buttons above already call
+    // e.stopPropagation(), so this listener never double-toggles them.
+    cardEl.addEventListener("click", (e) => {
+      if (e.target.closest("a, button, input, label")) return;
+      setFlipped(!cardEl.classList.contains("is-flipped"));
+    });
+
     // Optional bonus: long-press the card front also flips it (kept from
     // this project's existing UX), without breaking keyboard/click access.
     let pressTimer = null;
@@ -375,12 +399,14 @@
   function renderRecommendationCards(container, tools) {
     if (!container) return;
     const list = Array.isArray(tools) ? tools.slice(0, 7) : [];
-    const [main, ...alts] = list;
 
+    // All cards — the highlighted pick and every alternative — render into
+    // ONE grid (.rcard-row) so they're always equal width/height and the
+    // layout reflows responsively as one unit instead of two mismatched
+    // rows.
     container.classList.add("rcard-grid");
     container.innerHTML = `
-      ${main ? `<div class="rcard-main-row">${cardMarkup(main, true)}</div>` : ""}
-      <div class="rcard-alt-row">${alts.map((t) => cardMarkup(t, false)).join("")}</div>
+      <div class="rcard-row">${list.map((t, i) => cardMarkup(t, i === 0)).join("")}</div>
     `;
 
     const cardEls = container.querySelectorAll(".rcard");
@@ -402,8 +428,10 @@
         </div>
       </div>`;
     container.innerHTML = `
-      <div class="rcard-main-row">${skeletonCard(true)}</div>
-      <div class="rcard-alt-row">${Array.from({ length: Math.max(0, count - 1) }).map(() => skeletonCard(false)).join("")}</div>
+      <div class="rcard-row">
+        ${skeletonCard(true)}
+        ${Array.from({ length: Math.max(0, count - 1) }).map(() => skeletonCard(false)).join("")}
+      </div>
     `;
   }
 
