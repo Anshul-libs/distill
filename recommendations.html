@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Distill</title>
+<title>Recommendations · Distill</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="js/tailwind-config.js"></script>
@@ -14,23 +14,20 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-cream text-ink antialiased">
- 
+
   <div class="flex min-h-screen">
     <div id="sidebar-root"></div>
- 
+
     <div class="flex-1 min-w-0 flex flex-col">
       <header class="h-20 shrink-0 flex items-center px-6 lg:px-10 border-b border-line bg-cream/80 backdrop-blur sticky top-0 z-20">
         <div id="topnav-root" class="w-full"></div>
       </header>
- 
-      <main class="flex-1 px-6 py-10 page-enter">
-        <div class="max-w-2xl mx-auto text-center pt-16">
 
-          <h1 class="text-3xl font-bold tracking-tight">What are you trying to get done?</h1>
-          <p class="mt-3 text-muted">Describe a task and Distill will match you with the best AI tools for it.</p>
+      <main class="flex-1 px-6 py-10 page-enter">
+        <div class="max-w-6xl mx-auto">
 
           <!-- Search & Multi-Query Controls -->
-          <div class="flex items-center gap-3 mt-8">
+          <div class="flex items-center gap-3 mb-6 max-w-4xl mx-auto">
             <div class="flex-1 search-shell flex items-center gap-3 bg-white rounded-search shadow-search border border-line h-[56px] px-4">
               <i data-lucide="search" class="w-5 h-5 text-gray-400 shrink-0"></i>
               <input id="homeSearchInput" type="text" autocomplete="off" placeholder="Search AI tools for any task..."
@@ -47,9 +44,22 @@
             </button>
           </div>
 
-          <!-- Active Tags (queued keywords before "Search" is pressed) -->
-          <div id="activeTags" class="flex flex-wrap gap-2 justify-center mt-4"></div>
+          <!-- Active Tags -->
+          <div id="activeTags" class="flex flex-wrap gap-2 mb-6 max-w-4xl mx-auto"></div>
 
+          <!-- Results Blocks -->
+          <div id="resultsBlocks">
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-20">
+              <i data-lucide="search-x" class="w-10 h-10 text-gray-300 mx-auto"></i>
+              <p class="mt-4 text-muted">Search for a task above to see your matches.</p>
+            </div>
+          </div>
+
+          <!-- Up Arrow Scroll -->
+          <button id="upArrowBtn" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-white shadow-card border border-line flex items-center justify-center opacity-0 pointer-events-none transition-opacity hover:shadow-lg">
+            <i data-lucide="arrow-up" class="w-5 h-5 text-green-dark"></i>
+          </button>
         </div>
       </main>
 
@@ -57,31 +67,29 @@
     </div>
   </div>
 
-  <!--
-    Recommendation cards no longer render on this page — they live on their
-    own page now (recommendations.html) so Home stays a lightweight search
-    entry point instead of a long, card-heavy scroll. See
-    js/recommendation-card.js / css/recommendation-card.css for that page.
-  -->
-
   <script src="js/auth.js"></script>
   <script src="js/history.js"></script>
+  <script src="js/data.js"></script>
   <script src="js/components.js"></script>
   <script src="js/search.js"></script>
+  <script src="js/rating.js"></script>
+  <script src="js/recommendation-card.js"></script>
   <script>
     requireAuth();
-    renderShell("home");
+    renderShell("recommendations");
 
-    // Home only collects the query — actually finding & showing matches
-    // happens on recommendations.html, which renderRecommendationCards()
-    // populates.
+    // State
     let activeQueries = [];
 
+    // DOM refs
     const searchInput = document.getElementById('homeSearchInput');
     const searchBtn = document.getElementById('homeSearchBtn');
     const voiceSearchBtn = document.getElementById('voiceSearchBtn');
     const addBtn = document.getElementById('addQueryBtn');
     const activeTags = document.getElementById('activeTags');
+    const resultsBlocks = document.getElementById('resultsBlocks');
+    const emptyState = document.getElementById('emptyState');
+    const upArrowBtn = document.getElementById('upArrowBtn');
 
     // Voice Search
     const SpeechRecognition =
@@ -133,15 +141,16 @@
       });
     }
 
-    // If we landed here with ?q= (an old link/bookmark, sidebar recent
-    // search, dashboard history item, etc.) hand straight off to the
-    // results page instead of showing anything on Home.
+    // Initial load from URL
     const urlParams = new URLSearchParams(window.location.search);
     const initialQuery = urlParams.get('q');
     if (initialQuery) {
-      window.location.replace(`recommendations.html?q=${encodeURIComponent(initialQuery)}`);
+      activeQueries = [initialQuery];
+      searchInput.value = initialQuery;
+      addHistory(initialQuery);
     }
 
+    // Render tags
     function renderTags() {
       activeTags.innerHTML = activeQueries.map((q, i) => `
         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-light text-green-dark text-xs font-semibold">
@@ -156,46 +165,103 @@
           const idx = parseInt(btn.dataset.index);
           activeQueries.splice(idx, 1);
           renderTags();
+          if (activeQueries.length === 0) {
+            resultsBlocks.innerHTML = '';
+            emptyState.classList.remove('hidden');
+          } else {
+            performSearch(false);
+          }
         });
       });
     }
 
-    function goToRecommendations() {
-      if (!activeQueries.length) return;
+    // Dynamic description based on keywords — same touch the old fillCard() had.
+    function getDynamicDescription(tool, query) {
+      return `Great for "${query}". ${tool.description}`;
+    }
+
+    // Main Search Function
+    //
+    // NOTE ON TOOL IDs: searchTools() currently returns tools from the local
+    // js/data.js mock, whose `id` fields are string slugs (e.g. "writesonic").
+    // js/rating.js and the backend both expect a NUMERIC id matching
+    // ai_tools.id in Postgres (setRating does Number(toolId), and the
+    // backend 400s if that's not an integer). Rating will fail validation
+    // until either data.js's ids are switched to the real numeric ai_tools
+    // ids, or this function is pointed at a real GET /api/tools call instead
+    // of the local mock.
+    async function performSearch(append = false) {
+      if (activeQueries.length === 0) {
+        resultsBlocks.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
       const fullQuery = activeQueries.join(" ");
-      addHistory(fullQuery);
-      window.location.href = `recommendations.html?q=${encodeURIComponent(fullQuery)}`;
+      const tools = searchTools(fullQuery, 7);
+      if (!tools.length) return;
+
+      // tools[0] becomes the highlighted main card, tools[1..6] the six
+      // alternatives — renderRecommendationCards() handles that split.
+      const toolsWithDescriptions = tools.map(tool => ({
+        ...tool,
+        description: getDynamicDescription(tool, fullQuery),
+      }));
+
+      const block = document.createElement('div');
+      block.className = 'results-block mt-8 page-enter';
+
+      if (append) {
+        resultsBlocks.appendChild(block);
+      } else {
+        resultsBlocks.innerHTML = '';
+        resultsBlocks.appendChild(block);
+      }
+
+      renderRecommendationCards(block, toolsWithDescriptions);
+
+      if (append) {
+        block.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Show up arrow if more than 1 block
+      upArrowBtn.style.opacity = resultsBlocks.children.length > 1 ? '1' : '0';
+      upArrowBtn.style.pointerEvents = resultsBlocks.children.length > 1 ? 'auto' : 'none';
     }
 
     // Event Listeners
     searchBtn.addEventListener('click', () => {
       const val = searchInput.value.trim();
       if (!val) return;
-      activeQueries = activeQueries.length ? [...activeQueries, val] : [val];
-      goToRecommendations();
+      activeQueries = [val];
+      history.replaceState(null, "", `recommendations.html?q=${encodeURIComponent(val)}`);
+      renderTags();
+      performSearch(false);
     });
 
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') searchBtn.click();
     });
 
-    // "+" queues an extra keyword as a tag without leaving the page yet —
-    // useful for building a compound query before handing off to Search.
     addBtn.addEventListener('click', () => {
       const val = searchInput.value.trim();
       if (!val) return;
       activeQueries.push(val);
       renderTags();
       searchInput.value = '';
+      performSearch(true);
     });
 
+    upArrowBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Initialize
     renderTags();
+    if (activeQueries.length > 0) {
+      performSearch(false);
+    }
   </script>
 </body>
 </html>
- 
-
-
-
-
-
