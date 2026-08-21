@@ -117,7 +117,17 @@
     if (s.length <= max) return s;
     return `${s.slice(0, max - 1).trimEnd()}…`;
   }
+             function getToolLogo(tool) {
+  if (tool.logo_url) return tool.logo_url;
+  if (tool.logo) return tool.logo;
 
+  try {
+    const url = new URL(tool.url || tool.official_website);
+    return `https://www.google.com/s2/favicons?domain=${url.hostname}&sz=128`;
+  } catch {
+    return "";
+  }
+}
   function cardMarkup(tool, isMain) {
     const cardId = uid("rcard");
     const groupName = `${cardId}-stars`;
@@ -151,7 +161,21 @@
           <div class="rcard-front">
             <div class="rcard-header">
               <div class="rcard-identity">
-                <span class="rcard-logo">${escapeHtml((tool.name || "?")[0])}</span>
+                <span class="rcard-logo">
+  ${
+    getToolLogo(tool)
+      ? `<img
+          src="${escapeHtml(getToolLogo(tool))}"
+          alt="${escapeHtml(tool.name || "Tool")} logo"
+          loading="lazy"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+        >`
+      : ""
+  }
+  <span class="rcard-logo-fallback">
+    ${escapeHtml((tool.name || "?")[0])}
+  </span>
+</span>
                 <div class="rcard-titles" style="min-width:0">
                   <p class="rcard-name" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(tool.name)}</p>
                   <p class="rcard-category">${escapeHtml(tool.category || "")}</p>

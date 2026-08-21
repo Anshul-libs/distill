@@ -199,8 +199,30 @@
 
       emptyState.classList.add('hidden');
       const fullQuery = activeQueries.join(" ");
-      const tools = searchTools(fullQuery, 7);
-      if (!tools.length) return;
+
+const response = await fetch("http://localhost:5000/api/recommendations", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("distill_token")}`
+  },
+  body: JSON.stringify({
+    profession: "General User",
+    task: fullQuery,
+    message: fullQuery
+  })
+});
+
+if (!response.ok) {
+  throw new Error("Recommendation API failed");
+}
+
+const data = await response.json();
+
+console.log("REAL BACKEND RECOMMENDATION:", data);
+
+const tools = data.tools || [];
+if (!tools.length) return;
 
       // tools[0] becomes the highlighted main card, tools[1..6] the six
       // alternatives — renderRecommendationCards() handles that split.
