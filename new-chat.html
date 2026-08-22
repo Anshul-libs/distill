@@ -244,7 +244,7 @@
     // Phase 9 — Connect New Chat to backend
 async function createNewChat(query) {
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("distill_token"); // fixed: was "token", auth.js actually stores it as "distill_token"
 
     const response = await fetch("http://localhost:5000/api/chats", {
       method: "POST",

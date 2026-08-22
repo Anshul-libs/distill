@@ -9,7 +9,7 @@ const searchRoutes = require("./routes/searchroutes");
 const recommendationRoutes = require("./routes/recommendation");
 const chatRoutes = require("./routes/chatRoutes");
 const authRoutes = require("./routes/authroutes");
-const historyRoutes = require("./routes/historyRoutes");
+const historyRoutes = require("./routes/historyroutes");
 const trendingRoutes = require("./routes/trendingRoutes");
 const ratingRoutes = require("./routes/ratingroutes");
 

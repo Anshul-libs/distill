@@ -69,7 +69,6 @@
 
   <script src="js/auth.js"></script>
   <script src="js/history.js"></script>
-  <script src="js/data.js"></script>
   <script src="js/components.js"></script>
   <script src="js/search.js"></script>
   <script src="js/rating.js"></script>
@@ -175,21 +174,42 @@
       });
     }
 
-    // Dynamic description based on keywords — same touch the old fillCard() had.
-    function getDynamicDescription(tool, query) {
-      return `Great for "${query}". ${tool.description}`;
+    // Backend base — change if you deploy the API elsewhere.
+    const API_BASE = "http://localhost:5000/api";
+
+    // recommendation-card.js expects: id, name, category, description,
+    // pricing (free|hybrid|paid), pros[], cons[], rating, url, credits.
+    // The ai_tools table gives us: id, tool_name, category, description,
+    // pricing, official_website, best_use_cases[], target_users[].
+    // This maps one shape to the other so nothing in recommendation-card.js
+    // has to change. `pros`/`cons` aren't real DB columns yet, so we fall
+    // back to best_use_cases for pros and leave cons empty — swap these two
+    // lines out once/if you add real pros/cons columns.
+    function mapDbToolToCard(row, query) {
+      const pricingRaw = (row.pricing || "hybrid").toLowerCase();
+      const pricing = ["free", "hybrid", "paid"].includes(pricingRaw) ? pricingRaw : "hybrid";
+      return {
+        id: row.id, // real numeric ai_tools.id — this is what makes rating.js work
+        name: row.tool_name,
+        category: row.category || "AI Tool",
+        pricing,
+        description: `Great for "${query}". ${row.description || ""}`,
+        pros: Array.isArray(row.best_use_cases) ? row.best_use_cases.slice(0, 2) : [],
+        cons: [],
+        rating: 0, // placeholder — recommendation-card.js overwrites this live via /api/ratings
+        url: row.official_website || "#",
+        credits: row.pricing === "free" ? "Free tier available" : undefined,
+      };
     }
 
-    // Main Search Function
-    //
-    // NOTE ON TOOL IDs: searchTools() currently returns tools from the local
-    // js/data.js mock, whose `id` fields are string slugs (e.g. "writesonic").
-    // js/rating.js and the backend both expect a NUMERIC id matching
-    // ai_tools.id in Postgres (setRating does Number(toolId), and the
-    // backend 400s if that's not an integer). Rating will fail validation
-    // until either data.js's ids are switched to the real numeric ai_tools
-    // ids, or this function is pointed at a real GET /api/tools call instead
-    // of the local mock.
+    async function fetchToolsFromDb(query) {
+      const res = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || "Search failed");
+      return json.data; // array of ai_tools rows
+    }
+
+    // Main Search Function — now backed by Neon via GET /api/search.
     async function performSearch(append = false) {
       if (activeQueries.length === 0) {
         resultsBlocks.innerHTML = '';
@@ -200,40 +220,8 @@
       emptyState.classList.add('hidden');
       const fullQuery = activeQueries.join(" ");
 
-const response = await fetch("http://localhost:5000/api/recommendations", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${localStorage.getItem("distill_token")}`
-  },
-  body: JSON.stringify({
-    profession: "General User",
-    task: fullQuery,
-    message: fullQuery
-  })
-});
-
-if (!response.ok) {
-  throw new Error("Recommendation API failed");
-}
-
-const data = await response.json();
-
-console.log("REAL BACKEND RECOMMENDATION:", data);
-
-const tools = data.tools || [];
-if (!tools.length) return;
-
-      // tools[0] becomes the highlighted main card, tools[1..6] the six
-      // alternatives — renderRecommendationCards() handles that split.
-      const toolsWithDescriptions = tools.map(tool => ({
-        ...tool,
-        description: getDynamicDescription(tool, fullQuery),
-      }));
-
       const block = document.createElement('div');
       block.className = 'results-block mt-8 page-enter';
-
       if (append) {
         resultsBlocks.appendChild(block);
       } else {
@@ -241,7 +229,27 @@ if (!tools.length) return;
         resultsBlocks.appendChild(block);
       }
 
-      renderRecommendationCards(block, toolsWithDescriptions);
+      // Skeleton while the DB responds.
+      renderRecommendationSkeleton(block, 7);
+
+      let rows;
+      try {
+        rows = await fetchToolsFromDb(fullQuery);
+      } catch (err) {
+        console.error("Search API error:", err);
+        block.innerHTML = `<p class="text-center text-muted py-16">Couldn't reach the server. Is the backend running on port 5000?</p>`;
+        return;
+      }
+
+      if (!rows.length) {
+        block.innerHTML = `<p class="text-center text-muted py-16">No AI tools matched "${fullQuery}" yet.</p>`;
+        return;
+      }
+
+      // rows[0] becomes the highlighted main card, rows[1..6] the six
+      // alternatives — renderRecommendationCards() handles that split.
+      const toolsForCards = rows.slice(0, 7).map((row) => mapDbToolToCard(row, fullQuery));
+      renderRecommendationCards(block, toolsForCards);
 
       if (append) {
         block.scrollIntoView({ behavior: 'smooth', block: 'start' });

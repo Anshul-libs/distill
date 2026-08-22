@@ -40,16 +40,41 @@
 
   <script src="js/auth.js"></script>
   <script src="js/history.js"></script>
-  <script src="js/data.js"></script>
   <script src="js/components.js"></script>
   <script src="js/tools-grid.js"></script>
   <script>
     requireAuth();
     renderShell("offers");
-    const deals = AI_TOOLS
-      .filter((t) => t.pricing === "free" || t.pricing === "hybrid")
-      .sort((a, b) => trendingScore(b) - trendingScore(a));
-    renderToolGrid("offersGrid", deals, "Offer");
+
+    const API_BASE = "http://localhost:5000/api";
+
+    async function loadOffers() {
+      const grid = document.getElementById("offersGrid");
+      grid.innerHTML = `<p class="col-span-full text-center text-muted py-16">Loading offers…</p>`;
+      try {
+        const res = await fetch(`${API_BASE}/tools`);
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || "Failed to load tools");
+
+        // "Offer" = free or hybrid-pricing tools from Neon, newest first.
+        const deals = json.data
+          .filter((t) => {
+            const p = (t.pricing || "").toLowerCase();
+            return p === "free" || p === "hybrid" || p === "freemium";
+          })
+          .sort((a, b) => (b.id || 0) - (a.id || 0));
+
+        // renderTrendingGrid() already expects the exact ai_tools column
+        // names (tool_name, description, official_website, source), so it
+        // renders DB rows directly — no field mapping needed here.
+        renderTrendingGrid("offersGrid", deals);
+      } catch (error) {
+        console.error("Offers API error:", error);
+        grid.innerHTML = `<p class="col-span-full text-center text-muted py-16">Couldn't reach the server. Is the backend running on port 5000?</p>`;
+      }
+    }
+
+    loadOffers();
   </script>
 </body>
 </html>

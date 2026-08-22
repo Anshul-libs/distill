@@ -3,7 +3,7 @@ const router = express.Router();
 
 const {
     getRecommendations
-} = require("../controllers/recommendationController");
+} = require("../controllers/recommendationcontroller");
 
 router.post("/", getRecommendations);
 

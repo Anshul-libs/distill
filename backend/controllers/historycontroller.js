@@ -2,7 +2,7 @@ const {
     createHistory,
     getHistory,
     deleteHistory
-} = require("../models/historyModel");
+} = require("../models/historymodel");
 
 // Save history
 const saveHistory = async (req, res) => {
